@@ -1,0 +1,70 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+metadata:
+  template_name: Proxmox Cloud Provider Shell 2G
+  template_author: Quali
+  template_version: 1.0.0
+  template_icon: Proxmox.png
+
+description: >
+ Sample TOSCA based shell
+
+imports:
+  - cloudshell_standard: cloudshell_cloud_provider_standard_1_0_1.yaml
+
+node_types:
+ vendor.resource.Proxmox Cloud Provider 2G:
+    derived_from: cloudshell.nodes.CustomCloudProvider
+    capabilities:
+      concurrent_command_capability:
+        type: cloudshell.capabilities.SupportConcurrentCommands
+      auto_discovery_capability:
+        type: cloudshell.capabilities.AutoDiscovery
+        properties:
+          enable_auto_discovery:
+            type: boolean
+            default: true
+          auto_discovery_description:
+            type: string
+            default: Describe the auto discovery
+          inventory_description:
+            type: string
+            default: Template will create a Proxmox resource in CloudShell. Once the Proxmox is modeled correctly in CloudShell it will be possible to deploy Apps on this Proxmox.
+          hide_address:
+            type: string
+            default: false
+          User:
+            type: string
+          Password:
+            type: cloudshell.datatypes.Password
+          Behavior during save:
+            type: string
+            default: "Power Off"
+          Shutdown Method:
+            type: string
+            default: "hard"
+    properties:
+      User:
+        type: string
+      Password:
+        type: cloudshell.datatypes.Password
+      Behavior during save:
+        type: string
+        description: "Determines the VM behavior when the sandbox is saved. If Power off is selected, and the VM was powered on before the save, then the VM will shut down for the duration of the save, and then be powered on at the end."
+        constraints:
+          - valid_values: ["Remain Powered On", "Power Off"]
+      Shutdown Method:
+        type: string
+        description: "The shutdown method that will be used when powering off the VM. Possible options are 'Hard' and 'Soft' shutdown."
+        constraints:
+          - valid_values: ["hard", "soft"]
+    artifacts:
+      icon:
+        file: Proxmox.png
+        type: tosca.artifacts.File
+      driver:
+        file: ProxmoxCloudProviderShell2GDriver.zip
+        type: tosca.artifacts.File
+      deployment:
+        file: Deployments.zip
+        type: tosca.artifacts.File
