@@ -268,9 +268,7 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
                 # And the command was called not in the sandbox
                 reservation_info = None
             with ProxmoxHandler.from_config(resource_config) as si:
-                DeleteFlow(
-                    si, actions.deployed_app, resource_config
-                ).delete()
+                DeleteFlow(si, actions.deployed_app, resource_config).delete()
 
     def SaveApp(
         self,
@@ -362,7 +360,7 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
                     si,
                     actions.deployed_app,
                     resource_config,
-                ).get_snapshot_paths()
+                ).get_snapshot_list()
 
     def remote_remove_snapshot(
         self,
