@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <properties>
 
-    <!-- The address of the Quali server on which to deploy, mandatory -->
+    <!-- The address of the Quali server on which to deploy_flow, mandatory -->
     <serverRootAddress>localhost</serverRootAddress>
 
-    <!-- The port of the Quali server on which to deploy, defaults to "8029" -->
+    <!-- The port of the Quali server on which to deploy_flow, defaults to "8029" -->
     <port>8029</port>
 
     <!-- The server admin username, password and domain to use when deploying -->
