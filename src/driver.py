@@ -4,17 +4,11 @@ import time
 from typing import TYPE_CHECKING
 
 from cloudshell.cp.core.cancellation_manager import CancellationContextManager
-from cloudshell.cp.core.request_actions.save_restore_app import (
-    SaveRestoreRequestActions,
-)
+
 from cloudshell.cp.core.reservation_info import ReservationInfo
 from cloudshell.shell.core.resource_driver_interface import ResourceDriverInterface
 from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
 from cloudshell.shell.core.session.logging_session import LoggingSessionContext
-from cloudshell.shell.flows.connectivity.parse_request_service import (
-    ParseConnectivityRequestService,
-)
-from cloudshell.shell.standards.core.utils import split_list_of_values
 
 from cloudshell.cp.proxmox.flows import (
     ProxmoxDeleteFlow as DeleteFlow,
@@ -22,17 +16,12 @@ from cloudshell.cp.proxmox.flows import (
     ProxmoxAutoloadFlow,
     ProxmoxPowerFlow,
     ProxmoxGetVMDetailsFlow,
-    get_deploy_flow,
-    # get_hints,
-    # refresh_ip,
-    # validate_attributes,
 )
-# from cloudshell.cp.vcenter.flows.save_restore_app import SaveRestoreAppFlow
-# from cloudshell.cp.vcenter.flows.vm_details import VCenterGetVMDetailsFlow
+from cloudshell.cp.proxmox.flows.deploy_flow import get_deploy_flow
+from cloudshell.cp.proxmox.flows.refresh_ip import refresh_ip
+
 from cloudshell.cp.proxmox.handlers.proxmox_handler import ProxmoxHandler
-# from cloudshell.cp.vcenter.models.connectivity_action_model import (
-#     VcenterConnectivityActionModel,
-# )
+
 from cloudshell.cp.proxmox.models.deploy_app import (
     ProxmoxDeployVMRequestActions,
     VMFromTemplateDeployApp,
@@ -54,7 +43,6 @@ if TYPE_CHECKING:
         InitCommandContext,
         ResourceCommandContext,
         ResourceRemoteCommandContext,
-        UnreservedResourceCommandContext,
     )
 
 
@@ -114,24 +102,28 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
         with LoggingSessionContext(context) as logger:
             logger.info("Starting Deploy command")
             logger.debug(f"Request: {request}")
-            api = CloudShellSessionContext(context).get_api()
-            resource_config = ProxmoxResourceConfig.from_context(context, api=api)
+            cs_api = CloudShellSessionContext(context).get_api()
+            resource_config = ProxmoxResourceConfig.from_context(context, api=cs_api)
 
             cancellation_manager = CancellationContextManager(cancellation_context)
             reservation_info = ReservationInfo.from_resource_context(context)
 
-            request_actions = ProxmoxDeployVMRequestActions.from_request(request, api)
+            request_actions = ProxmoxDeployVMRequestActions.from_request(
+                request,
+                cs_api
+            )
             deploy_flow_class = get_deploy_flow(request_actions)
+            api = ProxmoxHandler.from_config(resource_config)
 
-            with ProxmoxHandler.from_config(resource_config) as si:
-                deploy_flow = deploy_flow_class(
-                    si=si,
-                    resource_config=resource_config,
-                    reservation_info=reservation_info,
-                    cs_api=api,
-                    cancellation_manager=cancellation_manager,
-                )
-                return deploy_flow.deploy(request_actions=request_actions)
+            # with ProxmoxHandler.from_config(resource_config) as api:
+            deploy_flow = deploy_flow_class(
+                api=api,
+                resource_config=resource_config,
+                reservation_info=reservation_info,
+                cs_api=cs_api,
+                cancellation_manager=cancellation_manager,
+            )
+            return deploy_flow.deploy(request_actions=request_actions)
 
     def PowerOn(self, context: ResourceRemoteCommandContext, ports: list[str]):
         """Called when reserving a sandbox during setup.
@@ -270,39 +262,39 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
             with ProxmoxHandler.from_config(resource_config) as si:
                 DeleteFlow(si, actions.deployed_app, resource_config).delete()
 
-    def SaveApp(
-        self,
-        context: ResourceCommandContext,
-        request: str,
-        cancellation_context: CancellationContext,
-    ) -> str:
-        with LoggingSessionContext(context) as logger:
-            logger.info("Starting Save App command")
-            api = CloudShellSessionContext(context).get_api()
-            resource_config = ProxmoxResourceConfig.from_context(context, api=api)
-            cancellation_manager = CancellationContextManager(cancellation_context)
-            actions = SaveRestoreRequestActions.from_request(request)
-            with ProxmoxHandler.from_config(resource_config) as si:
-                return SaveRestoreAppFlow(
-                    si, resource_config, api, cancellation_manager
-                ).save_apps(actions.save_app_actions)
-
-    def DeleteSavedApps(
-        self,
-        context: UnreservedResourceCommandContext,
-        request: str,
-        cancellation_context: CancellationContext,
-    ) -> str:
-        with LoggingSessionContext(context) as logger:
-            logger.info("Starting Delete Saved App command")
-            api = CloudShellSessionContext(context).get_api()
-            resource_config = ProxmoxResourceConfig.from_context(context, api=api)
-            cancellation_manager = CancellationContextManager(cancellation_context)
-            actions = SaveRestoreRequestActions.from_request(request)
-            with ProxmoxHandler.from_config(resource_config) as si:
-                return SaveRestoreAppFlow(
-                    si, resource_config, api, cancellation_manager
-                ).delete_saved_apps(actions.delete_saved_app_actions)
+    # def SaveApp(
+    #     self,
+    #     context: ResourceCommandContext,
+    #     request: str,
+    #     cancellation_context: CancellationContext,
+    # ) -> str:
+    #     with LoggingSessionContext(context) as logger:
+    #         logger.info("Starting Save App command")
+    #         api = CloudShellSessionContext(context).get_api()
+    #         resource_config = ProxmoxResourceConfig.from_context(context, api=api)
+    #         cancellation_manager = CancellationContextManager(cancellation_context)
+    #         actions = SaveRestoreRequestActions.from_request(request)
+    #         with ProxmoxHandler.from_config(resource_config) as si:
+    #             return SaveRestoreAppFlow(
+    #                 si, resource_config, api, cancellation_manager
+    #             ).save_apps(actions.save_app_actions)
+    #
+    # def DeleteSavedApps(
+    #     self,
+    #     context: UnreservedResourceCommandContext,
+    #     request: str,
+    #     cancellation_context: CancellationContext,
+    # ) -> str:
+    #     with LoggingSessionContext(context) as logger:
+    #         logger.info("Starting Delete Saved App command")
+    #         api = CloudShellSessionContext(context).get_api()
+    #         resource_config = ProxmoxResourceConfig.from_context(context, api=api)
+    #         cancellation_manager = CancellationContextManager(cancellation_context)
+    #         actions = SaveRestoreRequestActions.from_request(request)
+    #         with ProxmoxHandler.from_config(resource_config) as si:
+    #             return SaveRestoreAppFlow(
+    #                 si, resource_config, api, cancellation_manager
+    #             ).delete_saved_apps(actions.delete_saved_app_actions)
 
     def remote_save_snapshot(
         self,

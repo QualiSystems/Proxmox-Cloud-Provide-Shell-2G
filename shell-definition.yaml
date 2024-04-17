@@ -37,7 +37,9 @@ node_types:
             type: string
           Password:
             type: cloudshell.datatypes.Password
-          Behavior during save:
+          Shared Storage:
+            type: string
+          Behavior During Save:
             type: string
             default: "Power Off"
           Shutdown Method:
@@ -48,6 +50,8 @@ node_types:
         type: string
       Password:
         type: cloudshell.datatypes.Password
+      Shared Storage:
+        type: string
       Behavior during save:
         type: string
         description: "Determines the VM behavior when the sandbox is saved. If Power off is selected, and the VM was powered on before the save, then the VM will shut down for the duration of the save, and then be powered on at the end."

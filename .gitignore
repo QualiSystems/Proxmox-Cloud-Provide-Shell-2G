@@ -69,3 +69,5 @@ src/__init__.py
 /venv
 /tesrrr.py
 tasks.py
+
+/src/run_cs_prox.py
