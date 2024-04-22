@@ -75,14 +75,14 @@ node_types:
         file: proxmox.png
         type: tosca.artifacts.File
 
-  vendor.resource.Proxmox Proxmox Instance From Container Image 2G:
+  vendor.resource.Proxmox Instance From Container Image 2G:
     derived_from: cloudshell.nodes.CustomDeploymentOption
     properties:
       Target Node:
         type: string
         description: "Target node name. Only allowed if the original VM is on shared storage."
         tags: [ user_input, editable_only_in_app_template, enable_hints ]
-      Container Name:
+      Container Image:
         type: string
         description: "Proxmox Container name or URL that will be used as a source for 
         deploying a container."
@@ -209,7 +209,7 @@ node_types:
         type: string
         description: "Target node name. Only allowed if the original VM is on shared storage."
         tags: [user_input, editable_only_in_app_template, enable_hints]
-      VM ID:
+      Container ID:
         type: string
         description: "Proxmox VM Id that will be used as a source for deploying a VM."
         tags: [ user_input, editable_only_in_app_template, enable_hints ]
