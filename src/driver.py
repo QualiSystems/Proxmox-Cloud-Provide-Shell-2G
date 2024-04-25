@@ -17,21 +17,21 @@ from cloudshell.cp.proxmox.flows import (
     ProxmoxPowerFlow,
     ProxmoxGetVMDetailsFlow,
 )
-from cloudshell.cp.proxmox.flows.deploy_flow import get_deploy_flow
+from cloudshell.cp.proxmox.flows.deploy_flow import get_deploy_params
 from cloudshell.cp.proxmox.flows.refresh_ip import refresh_ip
 
 from cloudshell.cp.proxmox.handlers.proxmox_handler import ProxmoxHandler
 
 from cloudshell.cp.proxmox.models.deploy_app import (
     ProxmoxDeployVMRequestActions,
-    VMFromTemplateDeployApp,
-    VMFromVMDeployApp,
+    InstanceFromTemplateDeployApp,
+    InstanceFromVMDeployApp,
 )
 from cloudshell.cp.proxmox.models.deployed_app import (
     ProxmoxDeployedVMActions,
     ProxmoxGetVMDetailsRequestActions,
-    VMFromTemplateDeployedApp,
-    VMFromVMDeployedApp,
+    InstanceFromTemplateDeployedApp,
+    InstanceFromVMDeployedApp,
 )
 from cloudshell.cp.proxmox.resource_config import ProxmoxResourceConfig
 
@@ -52,14 +52,14 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
 
     def __init__(self):
         for deploy_app_cls in (
-            VMFromVMDeployApp,
-            VMFromTemplateDeployApp,
+            InstanceFromVMDeployApp,
+            InstanceFromTemplateDeployApp,
         ):
             ProxmoxDeployVMRequestActions.register_deployment_path(deploy_app_cls)
 
         for deployed_app_cls in (
-            VMFromVMDeployedApp,
-            VMFromTemplateDeployedApp,
+            InstanceFromVMDeployedApp,
+            InstanceFromTemplateDeployedApp,
         ):
             ProxmoxDeployedVMActions.register_deployment_path(deployed_app_cls)
 
@@ -112,7 +112,7 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
                 request,
                 cs_api
             )
-            deploy_flow_class = get_deploy_flow(request_actions)
+            deploy_flow_class, deploy_instance_type = get_deploy_params(request_actions)
             api = ProxmoxHandler.from_config(resource_config)
 
             # with ProxmoxHandler.from_config(resource_config) as api:
