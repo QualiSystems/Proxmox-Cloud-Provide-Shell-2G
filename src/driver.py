@@ -9,6 +9,8 @@ from cloudshell.cp.core.reservation_info import ReservationInfo
 from cloudshell.shell.core.resource_driver_interface import ResourceDriverInterface
 from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
 from cloudshell.shell.core.session.logging_session import LoggingSessionContext
+from cloudshell.shell.flows.connectivity.parse_request_service import \
+    ParseConnectivityRequestService
 
 from cloudshell.cp.proxmox.flows import (
     ProxmoxDeleteFlow as DeleteFlow,
@@ -17,21 +19,26 @@ from cloudshell.cp.proxmox.flows import (
     ProxmoxPowerFlow,
     ProxmoxGetVMDetailsFlow,
 )
+from cloudshell.cp.proxmox.flows.connectivity_flow import ProxmoxConnectivityFlow
 from cloudshell.cp.proxmox.flows.deploy_flow import get_deploy_params
 from cloudshell.cp.proxmox.flows.refresh_ip import refresh_ip
 
 from cloudshell.cp.proxmox.handlers.proxmox_handler import ProxmoxHandler
+from cloudshell.cp.proxmox.models.connectivity_action_model import \
+    ProxmoxConnectivityActionModel
 
 from cloudshell.cp.proxmox.models.deploy_app import (
     ProxmoxDeployVMRequestActions,
     InstanceFromTemplateDeployApp,
-    InstanceFromVMDeployApp,
+    InstanceFromVMDeployApp, InstanceFromQEMUImageDeployApp,
+    InstanceFromContainerImageDeployApp, InstanceFromContainerDeployApp,
 )
 from cloudshell.cp.proxmox.models.deployed_app import (
     ProxmoxDeployedVMActions,
     ProxmoxGetVMDetailsRequestActions,
     InstanceFromTemplateDeployedApp,
-    InstanceFromVMDeployedApp,
+    InstanceFromVMDeployedApp, InstanceFromContainerDeployedApp,
+    InstanceFromContainerImageDeployedApp, InstanceFromQEMUImageDeployedApp,
 )
 from cloudshell.cp.proxmox.resource_config import ProxmoxResourceConfig
 
@@ -53,6 +60,9 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
     def __init__(self):
         for deploy_app_cls in (
             InstanceFromVMDeployApp,
+            InstanceFromQEMUImageDeployApp,
+            InstanceFromContainerImageDeployApp,
+            InstanceFromContainerDeployApp,
             InstanceFromTemplateDeployApp,
         ):
             ProxmoxDeployVMRequestActions.register_deployment_path(deploy_app_cls)
@@ -60,6 +70,9 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
         for deployed_app_cls in (
             InstanceFromVMDeployedApp,
             InstanceFromTemplateDeployedApp,
+            InstanceFromContainerDeployedApp,
+            InstanceFromContainerImageDeployedApp,
+            InstanceFromQEMUImageDeployedApp
         ):
             ProxmoxDeployedVMActions.register_deployment_path(deployed_app_cls)
 
@@ -234,12 +247,16 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
             api = CloudShellSessionContext(context).get_api()
             resource_config = ProxmoxResourceConfig.from_context(context, api=api)
             reservation_info = ReservationInfo.from_resource_context(context)
-            # with ProxmoxHandler.from_config(resource_config) as si:
-            #     return ProxmoxConnectivityFlow(
-            #         si,
-            #         resource_config,
-            #         reservation_info,
-            #     ).apply_connectivity(request)
+            parse_connectivity_req_service = ParseConnectivityRequestService(
+                is_vlan_range_supported=True,
+                is_multi_vlan_supported=True,
+                connectivity_model_cls=ProxmoxConnectivityActionModel,
+            )
+            return ProxmoxConnectivityFlow(
+                parse_connectivity_req_service,
+                resource_conf=resource_config,
+                reservation_info=reservation_info
+            ).apply_connectivity(request)
 
     def DeleteInstance(self, context: ResourceRemoteCommandContext, ports: list[str]):
         """Called when removing a deployed App from the sandbox.
@@ -253,12 +270,12 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
             resource_config = ProxmoxResourceConfig.from_context(context, api=api)
             resource = context.remote_endpoints[0]
             actions = ProxmoxDeployedVMActions.from_remote_resource(resource, api)
-            try:
-                reservation_info = ReservationInfo.from_remote_resource_context(context)
-            except AttributeError:
-                # The sandbox in which the app is deployed failed and was removed.
-                # And the command was called not in the sandbox
-                reservation_info = None
+            # try:
+            #     reservation_info = ReservationInfo.from_remote_resource_context(context)
+            # except AttributeError:
+            #     # The sandbox in which the app is deployed failed and was removed.
+            #     # And the command was called not in the sandbox
+            #     reservation_info = None
             with ProxmoxHandler.from_config(resource_config) as si:
                 DeleteFlow(si, actions.deployed_app, resource_config).delete()
 
@@ -411,4 +428,3 @@ class ProxmoxCloudProviderShell2GDriver(ResourceDriverInterface):
                     actions.deployed_app,
                     resource_config,
                 ).orchestration_restore(saved_details, api)
-

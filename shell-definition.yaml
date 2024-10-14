@@ -39,12 +39,19 @@ node_types:
             type: cloudshell.datatypes.Password
           Shared Storage:
             type: string
-          Behavior During Save:
+          Default Bridge:
             type: string
-            default: "Power Off"
+#          Behavior During Save:
+#            type: string
+#            default: "Power Off"
           Shutdown Method:
             type: string
             default: "hard"
+            description: "The shutdown method that will be used when powering off the VM. Possible options are 'Hard' and 'Soft' shutdown."
+            constraints:
+              - valid_values: [ "hard", "soft" ]
+          Reserved Networks:
+            type: string
     properties:
       User:
         type: string
@@ -52,16 +59,20 @@ node_types:
         type: cloudshell.datatypes.Password
       Shared Storage:
         type: string
-      Behavior during save:
+      Default Bridge:
         type: string
-        description: "Determines the VM behavior when the sandbox is saved. If Power off is selected, and the VM was powered on before the save, then the VM will shut down for the duration of the save, and then be powered on at the end."
-        constraints:
-          - valid_values: ["Remain Powered On", "Power Off"]
+#      Behavior during save:
+#        type: string
+#        description: "Determines the VM behavior when the sandbox is saved. If Power off is selected, and the VM was powered on before the save, then the VM will shut down for the duration of the save, and then be powered on at the end."
+#        constraints:
+#          - valid_values: ["Remain Powered On", "Power Off"]
       Shutdown Method:
         type: string
         description: "The shutdown method that will be used when powering off the VM. Possible options are 'Hard' and 'Soft' shutdown."
         constraints:
           - valid_values: ["hard", "soft"]
+      Reserved Networks:
+        type: string
     artifacts:
       icon:
         file: Proxmox.png
